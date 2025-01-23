@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Platform - Analytics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#1c1c1c',
+                        'dark-card': '#131313',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .gradient-text {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+        }
+
+        .card-gradient {
+            background: linear-gradient(145deg, #131313, #1f1f1f);
+        }
+
+        /* Mobile-first responsive styles */
+        .chart-container {
+            position: relative;
+            height: 50vh;
+            min-height: 300px;
+            width: 100%;
+        }
+
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 40vh;
+                min-height: 250px;
+            }
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-dark text-white p-3 sm:p-6">
+    <div class="max-w-7xl mx-auto">
+        <!-- Analytics Header -->
+        <div class="card-gradient rounded-2xl border border-white/10 p-4 sm:p-6 mb-4 sm:mb-6">
+            <h1 class="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">Interview Analytics</h1>
+            <p class="text-sm sm:text-base text-white/70">Track your interview performance and progress</p>
+        </div>
+
+        <!-- Performance Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-6">
+            <!-- Average Score -->
+            <div class="card-gradient rounded-2xl border border-white/10 p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <h3 class="text-base sm:text-lg">Average Score</h3>
+                    <i class='bx bx-line-chart text-xl sm:text-2xl gradient-text'></i>
+                </div>
+                <p class="text-2xl sm:text-3xl font-bold" id="avgScore">0%</p>
+                <p class="text-xs sm:text-sm text-white/70">Overall performance</p>
+            </div>
+
+            <!-- Total Interviews -->
+            <div class="card-gradient rounded-2xl border border-white/10 p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <h3 class="text-base sm:text-lg">Total Interviews</h3>
+                    <i class='bx bx-video text-xl sm:text-2xl gradient-text'></i>
+                </div>
+                <p class="text-2xl sm:text-3xl font-bold" id="totalInterviews">0</p>
+                <p class="text-xs sm:text-sm text-white/70">Completed sessions</p>
+            </div>
+
+            <!-- Practice Time -->
+            <div class="card-gradient rounded-2xl border border-white/10 p-4 sm:p-6">
+                <div class="flex items-center justify-between mb-3 sm:mb-4">
+                    <h3 class="text-base sm:text-lg">Total Practice Time</h3>
+                    <i class='bx bx-time text-xl sm:text-2xl gradient-text'></i>
+                </div>
+                <p class="text-2xl sm:text-3xl font-bold" id="totalTime">0h</p>
+                <p class="text-xs sm:text-sm text-white/70">Time invested</p>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
+            <!-- Performance Trend -->
+            <div class="card-gradient rounded-2xl border border-white/10 p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-bold mb-4">Performance Trend</h3>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Interview Types Distribution -->
+            <div class="card-gradient rounded-2xl border border-white/10 p-4 sm:p-6">
+                <h3 class="text-base sm:text-lg font-bold mb-4">Interview Types</h3>
+                <div class="chart-container">
+                    <canvas id="typesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Interviews Table (New) -->
+        <div class="card-gradient rounded-2xl border border-white/10 p-4 sm:p-6 mt-4 sm:mt-6 overflow-x-auto">
+            <h3 class="text-base sm:text-lg font-bold mb-4">Recent Interviews</h3>
+            <table class="w-full min-w-[600px]">
+                <thead>
+                    <tr class="text-left border-b border-white/10">
+                        <th class="pb-3 text-sm sm:text-base">Date</th>
+                        <th class="pb-3 text-sm sm:text-base">Type</th>
+                        <th class="pb-3 text-sm sm:text-base">Score</th>
+                        <th class="pb-3 text-sm sm:text-base">Duration</th>
+                        <th class="pb-3 text-sm sm:text-base">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="recentInterviewsTable" class="text-white/70">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+
+        async function loadAnalytics() {
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/dashboard/stats/email/${userEmail}`);
+                const data = await response.json();
+
+                // Update stats
+                document.getElementById('avgScore').textContent = `${Math.round(data.averageScore)}%`;
+                document.getElementById('totalInterviews').textContent = data.totalInterviews;
+                document.getElementById('totalTime').textContent = `${data.totalPracticeTime}h`;
+
+                // Process interview data for charts
+                const recentInterviews = data.recentInterviews || [];
+                
+                // Update recent interviews table
+                const tableBody = document.getElementById('recentInterviewsTable');
+                tableBody.innerHTML = recentInterviews.map(interview => `
+                    <tr class="border-b border-white/5">
+                        <td class="py-3 text-sm">${new Date(interview.dateTime).toLocaleDateString()}</td>
+                        <td class="py-3 text-sm">${interview.type}</td>
+                        <td class="py-3 text-sm">${interview.score || '-'}%</td>
+                        <td class="py-3 text-sm">${interview.duration}min</td>
+                        <td class="py-3 text-sm">
+                            <span class="px-2 py-1 rounded-full text-xs ${
+                                interview.status === 'Completed' ? 'bg-green-500/20 text-green-500' :
+                                interview.status === 'Scheduled' ? 'bg-blue-500/20 text-blue-500' :
+                                'bg-red-500/20 text-red-500'
+                            }">${interview.status}</span>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Performance Chart
+                const performanceData = recentInterviews
+                    .filter(interview => interview.score !== null)
+                    .map(interview => ({
+                        date: new Date(interview.dateTime).toLocaleDateString(),
+                        score: interview.score
+                    }));
+
+                new Chart(document.getElementById('performanceChart'), {
+                    type: 'line',
+                    data: {
+                        labels: performanceData.map(d => d.date),
+                        datasets: [{
+                            label: 'Interview Score',
+                            data: performanceData.map(d => d.score),
+                            borderColor: '#00b8ff',
+                            tension: 0.4,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    font: {
+                                        size: window.innerWidth < 640 ? 10 : 12
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    font: {
+                                        size: window.innerWidth < 640 ? 10 : 12
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    font: {
+                                        size: window.innerWidth < 640 ? 10 : 12
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Types Chart
+                const typeCount = recentInterviews.reduce((acc, interview) => {
+                    acc[interview.type] = (acc[interview.type] || 0) + 1;
+                    return acc;
+                }, {});
+
+                new Chart(document.getElementById('typesChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(typeCount),
+                        datasets: [{
+                            data: Object.values(typeCount),
+                            backgroundColor: [
+                                '#00ff8c',
+                                '#00b8ff',
+                                '#ff00d4',
+                                '#ffbb00'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: 'rgba(255, 255, 255, 0.7)',
+                                    font: {
+                                        size: window.innerWidth < 640 ? 10 : 12
+                                    },
+                                    padding: window.innerWidth < 640 ? 10 : 20
+                                }
+                            }
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        // Load analytics when page loads
+        document.addEventListener('DOMContentLoaded', loadAnalytics);
+
+        // Reload charts on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(loadAnalytics, 250);
+        });
+    </script>
+</body>
+</html>

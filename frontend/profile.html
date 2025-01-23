@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Platform - Profile</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Toastify -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#1c1c1c',
+                        'dark-card': '#131313',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .gradient-text {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+        }
+
+        .card-gradient {
+            background: linear-gradient(145deg, #131313, #1f1f1f);
+        }
+    </style>
+</head>
+<body class="bg-dark text-white p-6">
+    <div class="max-w-4xl mx-auto">
+        <!-- Profile Header -->
+        <div class="card-gradient rounded-2xl border border-white/10 p-6 mb-6">
+            <div class="flex items-center space-x-4">
+                <div class="w-24 h-24 rounded-full border-2 border-white/10 overflow-hidden" id="profileImage">
+                    <!-- Profile image will be set by JavaScript -->
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold mb-2" id="profileName">Loading...</h1>
+                    <p class="text-white/70" id="profileEmail">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Details -->
+        <div class="card-gradient rounded-2xl border border-white/10 p-6">
+            <h2 class="text-xl font-bold mb-6">Profile Details</h2>
+            
+            <!-- Full Name -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="text-white/70">Full Name</label>
+                    <button onclick="toggleEditName()" class="text-[#00b8ff] hover:text-[#00ff8c]">
+                        <i class='bx bx-edit'></i> Edit
+                    </button>
+                </div>
+                <div id="nameDisplay" class="bg-white/[0.03] border border-white/10 rounded-xl p-3">
+                    Loading...
+                </div>
+                <div id="nameEdit" class="hidden">
+                    <form id="nameForm" class="flex gap-2">
+                        <input type="text" id="fullNameInput" 
+                               class="flex-1 bg-white/[0.03] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-[#00b8ff]">
+                        <button type="submit" class="gradient-bg text-black px-4 py-2 rounded-xl">Save</button>
+                        <button type="button" onclick="toggleEditName()" class="px-4 py-2 rounded-xl border border-white/10">Cancel</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Email (Read-only) -->
+            <div class="mb-6">
+                <label class="text-white/70 block mb-2">Email Address</label>
+                <div class="bg-white/[0.03] border border-white/10 rounded-xl p-3 text-white/50">
+                    <!-- Email will be set by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Account Status -->
+            <div>
+                <label class="text-white/70 block mb-2">Account Status</label>
+                <div class="flex items-center space-x-2 bg-white/[0.03] border border-white/10 rounded-xl p-3">
+                    <i class='bx bx-check-circle text-green-500'></i>
+                    <span>Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+        let isEditing = false;
+
+        function showNotification(message, isError = false) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                style: {
+                    background: isError ? "#ef4444" : "#22c55e",
+                }
+            }).showToast();
+        }
+
+        function toggleEditName() {
+            const displayDiv = document.getElementById('nameDisplay');
+            const editDiv = document.getElementById('nameEdit');
+            const fullNameInput = document.getElementById('fullNameInput');
+
+            if (!isEditing) {
+                fullNameInput.value = displayDiv.textContent.trim();
+            }
+
+            displayDiv.classList.toggle('hidden');
+            editDiv.classList.toggle('hidden');
+            isEditing = !isEditing;
+
+            if (isEditing) {
+                fullNameInput.focus();
+            }
+        }
+
+        async function updateName(newName) {
+            const userEmail = localStorage.getItem('userEmail');
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/email/${userEmail}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fullName: newName
+                    })
+                });
+
+                if (response.ok) {
+                    showNotification('Name updated successfully');
+                    localStorage.setItem('userName', newName);
+                    loadProfile();
+                    toggleEditName();
+                } else {
+                    throw new Error('Failed to update name');
+                }
+            } catch (error) {
+                showNotification('Error updating name: ' + error.message, true);
+            }
+        }
+
+        function loadProfile() {
+            const userEmail = localStorage.getItem('userEmail');
+            const userName = localStorage.getItem('userName');
+
+            if (!userEmail || !userName) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Set profile image
+            const profileImage = document.getElementById('profileImage');
+            profileImage.innerHTML = `<img src="https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=random" alt="Profile" class="w-full h-full object-cover">`;
+
+            // Set name and email
+            document.getElementById('profileName').textContent = userName;
+            document.getElementById('profileEmail').textContent = userEmail;
+            document.getElementById('nameDisplay').textContent = userName;
+            document.querySelector('div.text-white\\/50').textContent = userEmail;
+        }
+
+        // Form submission handler
+        document.getElementById('nameForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const newName = document.getElementById('fullNameInput').value.trim();
+            if (newName) {
+                await updateName(newName);
+            }
+        });
+
+        // Load profile when page loads
+        document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+</body>
+</html>

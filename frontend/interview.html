@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Platform - Interview</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Speech Handler -->
+    <script src="speech-handler.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <script>
+        const ACCOUNT_ID = 'uraccid';
+        const API_TOKEN = 'ex_M25qlRBMUK6Ao8U9SNjGrmoPQ8A7r0pPQU0Kq';
+        const API_URL = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/ai/run/@cf/meta/llama-3-8b-instruct-awq`;
+        const CORS_PROXY = 'https://cors.malith.workers.dev/?url=';
+
+
+
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#1c1c1c',
+                        'dark-card': '#131313',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .gradient-text {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+        }
+
+        .card-gradient {
+            background: linear-gradient(145deg, #131313, #1f1f1f);
+        }
+
+        .character-container {
+            position: relative;
+            height: 60vh;
+            width: 100%;
+            background: radial-gradient(circle at center, rgba(0,255,140,0.1), transparent);
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            border-width: 10px;
+            border-style: solid;
+            border-color: transparent rgba(255, 255, 255, 0.03) transparent transparent;
+        }
+
+        .chat-container {
+            height: 60vh;
+            min-height: 300px;
+            overflow-y: auto;
+        }
+
+        .mic-active {
+            background: rgba(34, 197, 94, 0.2) !important;
+            border-color: rgba(34, 197, 94, 0.3) !important;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+            }
+            .content-half {
+                width: 100%;
+            }
+            .character-container {
+                height: 40vh;
+            }
+            .chat-container {
+                height: 40vh;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-dark text-white p-4">
+    <div class="responsive-container">
+        <!-- Interview Setup Section -->
+        <div class="mb-4 card-gradient rounded-2xl border border-white/10 p-4">
+            <div class="setup-controls flex flex-wrap gap-4 items-center justify-between">
+                <!-- CV Upload -->
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center space-x-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] cursor-pointer">
+                        <i class='bx bx-upload text-xl'></i>
+                        <span>Upload CV</span>
+                        <input type="file" class="hidden" id="cvInput" accept=".pdf,.doc,.docx,.txt">
+                    </label>
+                    <span id="fileNameDisplay" class="text-sm text-white/50"></span>
+                </div>
+                
+                <!-- Interview Type Selection -->
+                <div class="selection-group flex gap-4">
+                    <select id="languageSelect" class="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 focus:outline-none">
+                        <option value="">Select Language</option>
+                        <option value="python">Python</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="java">Java</option>
+                    </select>
+                    
+                    <select id="frameworkSelect" class="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 focus:outline-none">
+                        <option value="">Select Framework</option>
+                        <option value="react">React</option>
+                        <option value="django">Django</option>
+                        <option value="spring">Spring</option>
+                    </select>
+                    
+                    <select id="positionSelect" class="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 focus:outline-none">
+                        <option value="">Select Position</option>
+                        <option value="intern">Intern</option>
+                        <option value="junior">Junior Developer</option>
+                        <option value="senior">Senior Developer</option>
+                    </select>
+                </div>
+                
+                <!-- Interview Controls -->
+                <div class="flex gap-4">
+                    <button id="startButton" class="px-6 py-2 rounded-xl gradient-bg text-black font-semibold">
+                        Start Interview
+                    </button>
+                    <button id="stopButton" class="px-6 py-2 rounded-xl bg-red-500/20 text-red-500 border border-red-500/30 font-semibold hidden">
+                        Stop Interview
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content flex gap-4">
+            <!-- Left Side - Character -->
+            <div class="content-half w-1/2 card-gradient rounded-2xl border border-white/10 p-4">
+                <div class="character-container flex items-center justify-center">
+                    <img src="https://api.dicebear.com/7.x/bottts/svg?size=200&seed=interview" 
+                         alt="AI Interviewer" 
+                         class="w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64">
+                </div>
+                <div class="mt-4">
+                    <div class="flex justify-center space-x-4">
+                        <button id="speakerButton" class="flex items-center space-x-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05]">
+                            <i class='bx bx-volume-full text-xl'></i>
+                            <span>AI Speaker</span>
+                        </button>
+                        <button id="micButton" class="flex items-center space-x-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05]">
+                            <i class='bx bx-microphone text-xl'></i>
+                            <span>Microphone</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - Transcript -->
+            <div class="content-half w-1/2 card-gradient rounded-2xl border border-white/10 p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">Interview Transcript</h2>
+                    <div class="flex space-x-2">
+                        <button class="p-2 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05]">
+                            <i class='bx bx-download'></i>
+                        </button>
+                        <button class="p-2 rounded-xl bg-white/[0.03] border border-white/10 hover:bg-white/[0.05]">
+                            <i class='bx bx-copy'></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-container overflow-y-auto space-y-4 pr-4">
+                    <!-- Chat messages will appear here -->
+                </div>
+
+                <!-- Input Area -->
+                <div class="mt-4">
+                    <div class="relative">
+                        <input type="text" 
+                               id="messageInput"
+                               placeholder="Type your response..." 
+                               class="w-full py-3 px-4 bg-white/[0.03] border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#00b8ff]">
+                        <button id="sendButton" class="absolute right-2 top-1/2 -translate-y-1/2 gradient-bg text-black px-4 py-2 rounded-lg">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+    const API_BASE_URL = 'http://localhost:8080';
+    let currentInterviewId = null;
+
+        let timeoutId;
+        let cvContent = '';
+        let interviewContext = '';
+        const speechHandler = new SpeechHandler();
+        speechHandler.isSpeaking = true;
+
+        // Initialize elements
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const micButton = document.getElementById('micButton');
+        const speakerButton = document.getElementById('speakerButton');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const cvInput = document.getElementById('cvInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+        // CV file handling
+        cvInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        fileNameDisplay.textContent = file.name;
+
+        try {
+            if (file.type === 'application/pdf') {
+                // Handle PDF files
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                let fullText = '';
+
+                // Extract text from each page
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n';
+                }
+                cvContent = fullText;
+            } else if (file.type === 'text/plain') {
+                // Handle text files
+                cvContent = await file.text();
+            } else {
+                // For other file types (doc, docx), you might need additional libraries
+                alert('Currently only PDF and TXT files are supported');
+                return;
+            }
+
+            console.log('Extracted CV content:', cvContent); // For debugging
+        } catch (error) {
+            console.error('Error reading file:', error);
+            alert('Error reading CV file');
+        }
+    });
+        // Speech recognition handlers
+        speechHandler.onTranscriptUpdate = (finalTranscript, interimTranscript) => {
+            if (interimTranscript) {
+                messageInput.value = interimTranscript;
+            }
+            if (finalTranscript) {
+                messageInput.value = finalTranscript;
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    sendMessage();
+                }, 3000);
+            }
+        };
+
+        speechHandler.onStateChange = (type, state) => {
+            if (type === 'listening') {
+                if (state) {
+                    micButton.classList.add('mic-active');
+                    micButton.querySelector('i').className = 'bx bx-microphone-off text-xl';
+                } else {
+                    micButton.classList.remove('mic-active');
+                    micButton.querySelector('i').className = 'bx bx-microphone text-xl';
+                }
+            } else if (type === 'error') {
+                console.error('Speech recognition error:', state);
+                micButton.classList.remove('mic-active');
+                micButton.querySelector('i').className = 'bx bx-microphone text-xl';
+                alert(`Speech recognition error: ${state}`);
+            }
+        };
+
+        function addMessage(message, isAI = false) {
+            const transcriptContainer = document.querySelector('.chat-container');
+            const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            
+            const messageHTML = `
+                <div class="speech-bubble ${!isAI ? 'ml-6' : ''}">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="font-semibold ${isAI ? 'gradient-text' : ''}">${isAI ? 'AI Interviewer' : 'You'}</span>
+                        <span class="text-white/50 text-sm">${time}</span>
+                    </div>
+                    <p>${message}</p>
+                </div>
+            `;
+            
+            transcriptContainer.insertAdjacentHTML('beforeend', messageHTML);
+            transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+
+            if (isAI) {
+                speechHandler.speak(message);
+            }
+        }
+
+        async function startInterview() {
+        const userEmail = localStorage.getItem('userEmail');
+        const language = document.getElementById('languageSelect').value;
+        const framework = document.getElementById('frameworkSelect').value;
+        const position = document.getElementById('positionSelect').value;
+
+        if (!language || !framework || !position) {
+            alert('Please select all options before starting the interview');
+            return;
+        }
+
+        if (!cvContent) {
+            alert('Please upload a CV first');
+            return;
+        }
+
+        try {
+            // Format the date correctly for the backend
+            const now = new Date();
+            const formattedDate = now.toISOString().slice(0, 19); // Remove milliseconds and timezone
+
+            // Create interview record in database
+            const dbResponse = await fetch(`${API_BASE_URL}/dashboard/schedule/email/${userEmail}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: language + ' - ' + framework,
+                    dateTime: formattedDate,
+                    duration: 45
+                })
+            });
+
+            const dbData = await dbResponse.json();
+            if (dbData.success) {
+                currentInterviewId = dbData.interviewId;
+                
+                const response = await fetch(`${CORS_PROXY}${encodeURIComponent(API_URL)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: "system",
+                                content: `You are an AI technical interviewer. Here is the context:
+                                        
+                                        CV CONTENT:
+                                        ${cvContent}
+
+                                        INTERVIEW DETAILS:
+                                        - Programming Language: ${language}
+                                        - Framework: ${framework}
+                                        - Position Level: ${position}
+
+                                        Instructions:
+                                        1. Extract the candidate's name from the CV
+                                        2. Start with a personalized greeting using their name
+                                        3. Focus questions on their experience with ${language} and ${framework}
+                                        4. Adjust technical question difficulty for ${position} level
+                                        5. Be professional but friendly
+                                        6. Reference their specific experience from the CV in your questions`
+                            },
+                            {
+                                role: "user",
+                                content: "Start the interview with a personalized greeting based on the CV content."
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+
+                const data = await response.json();
+                if (data.success && data.result && data.result.response) {
+                    // Save the context for future messages
+                    interviewContext = `CV Content: ${cvContent}\nLanguage: ${language}\nFramework: ${framework}\nPosition: ${position}`;
+                    startButton.classList.add('hidden');
+                    stopButton.classList.remove('hidden');
+                    addMessage(data.result.response, true);
+                } else {
+                    throw new Error('Invalid response format');
+                }
+            } else {
+                throw new Error(dbData.message || 'Failed to create interview record');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('Sorry, I encountered an error while starting the interview: ' + error.message, true);
+        }
+    }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, false);
+            messageInput.value = '';
+            clearTimeout(timeoutId);
+
+            try {
+                const response = await fetch(`${CORS_PROXY}${encodeURIComponent(API_URL)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: "system",
+                                content: `You are an AI technical interviewer. Use this context: ${interviewContext}
+                                         Maintain professional but friendly tone. Focus on technical assessment.`
+                            },
+                            {
+                                role: "user",
+                                content: message
+                            }
+                        ]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+
+                const data = await response.json();
+                if (data.success && data.result && data.result.response) {
+                    addMessage(data.result.response, true);
+                } else {
+                    throw new Error('Invalid response format');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('Sorry, I encountered an error while processing your response.', true);
+            }
+        }
+
+        // Event Listeners
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+
+        micButton.addEventListener('click', async () => {
+            try {
+                if (speechHandler.isListening) {
+                    speechHandler.stopListening();
+                } else {
+                    await speechHandler.startListening();
+                }
+            } catch (error) {
+                console.error('Error toggling microphone:', error);
+                micButton.classList.remove('mic-active');
+                micButton.querySelector('i').className = 'bx bx-microphone text-xl';
+            }
+        });
+
+        speakerButton.addEventListener('click', () => {
+            const isSpeaking = speechHandler.toggleSpeaker();
+            speakerButton.querySelector('i').className = isSpeaking ? 
+                'bx bx-volume-full text-xl' : 'bx bx-volume-mute text-xl';
+        });
+
+        startButton.addEventListener('click', () => {
+            startButton.classList.add('hidden');
+            stopButton.classList.remove('hidden');
+            startInterview();
+        });
+
+        stopButton.addEventListener('click', async () => {
+        if (!currentInterviewId) {
+            console.error('No interview ID found');
+            return;
+        }
+
+        try {
+            // Get all messages from chat
+            const chatMessages = document.querySelector('.chat-container');
+            const transcript = Array.from(chatMessages.children)
+                .map(msg => {
+                    const isAI = msg.querySelector('.gradient-text') !== null;
+                    const text = msg.querySelector('p').textContent;
+                    return `${isAI ? 'AI' : 'User'}: ${text}`;
+                })
+                .join('\n');
+
+            // Save transcript to database
+            const response = await fetch(`${API_BASE_URL}/dashboard/complete/${currentInterviewId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    transcript: transcript,
+                    score: 80 // Default score
+                })
+            });
+
+            if (response.ok) {
+                addMessage("Interview completed! You can view your transcript in the dashboard.", true);
+            } else {
+                throw new Error('Failed to save transcript');
+            }
+        } catch (error) {
+            console.error('Error saving transcript:', error);
+            addMessage('Failed to save interview transcript.', true);
+        } finally {
+            stopButton.classList.add('hidden');
+            startButton.classList.remove('hidden');
+            if (speechHandler.isListening) {
+                speechHandler.stopListening();
+            }
+        }
+    });
+    </script>
+</body>
+</html>

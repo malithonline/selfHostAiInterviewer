@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stats Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Toastify -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#1c1c1c',
+                        'dark-card': '#131313',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .gradient-text {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+        }
+
+        .card-gradient {
+            background: linear-gradient(145deg, #131313, #1f1f1f);
+        }
+    </style>
+</head>
+<body class="bg-dark text-white p-6">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="card-gradient p-6 rounded-2xl border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg">Total Interviews</h3>
+                <i class='bx bx-video text-2xl gradient-text'></i>
+            </div>
+            <p class="text-3xl font-bold" id="totalInterviews">0</p>
+            <p class="text-white/70 text-sm">Completed interviews</p>
+        </div>
+        <div class="card-gradient p-6 rounded-2xl border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg">Average Score</h3>
+                <i class='bx bx-line-chart text-2xl gradient-text'></i>
+            </div>
+            <p class="text-3xl font-bold" id="averageScore">0%</p>
+            <p class="text-white/70 text-sm">Overall performance</p>
+        </div>
+        <div class="card-gradient p-6 rounded-2xl border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg">Practice Time</h3>
+                <i class='bx bx-time text-2xl gradient-text'></i>
+            </div>
+            <p class="text-3xl font-bold" id="practiceTime">0h</p>
+            <p class="text-white/70 text-sm">Total time spent</p>
+        </div>
+        <div class="card-gradient p-6 rounded-2xl border border-white/10">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg">Next Interview</h3>
+                <i class='bx bx-calendar text-2xl gradient-text'></i>
+            </div>
+            <p class="text-3xl font-bold" id="nextInterview">-</p>
+            <p class="text-white/70 text-sm">Upcoming session</p>
+        </div>
+    </div>
+
+    <!-- Schedule New Interview -->
+    <div class="card-gradient rounded-2xl border border-white/10 p-6 mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold">Schedule New Interview</h2>
+        </div>
+        <form id="scheduleForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select name="type" class="bg-white/[0.03] border border-white/10 rounded-xl p-3 text-white">
+                <option value="Technical">Technical Interview</option>
+                <option value="HR">HR Interview</option>
+                <option value="System Design">System Design</option>
+                <option value="Behavioral">Behavioral</option>
+            </select>
+            <input type="datetime-local" name="dateTime" required
+                class="bg-white/[0.03] border border-white/10 rounded-xl p-3 text-white">
+            <button type="submit" class="gradient-bg text-black px-4 py-2 rounded-xl text-sm font-semibold">
+                Schedule Interview
+            </button>
+        </form>
+    </div>
+
+    <!-- Recent Interviews -->
+    <div class="card-gradient rounded-2xl border border-white/10 p-6">
+        <h2 class="text-xl font-bold mb-6">Recent Interviews</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left border-b border-white/10">
+                        <th class="pb-4">Date</th>
+                        <th class="pb-4">Type</th>
+                        <th class="pb-4">Score</th>
+                        <th class="pb-4">Duration</th>
+                        <th class="pb-4">Status</th>
+                        <th class="pb-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="interviewsTable" class="text-white/70">
+                    <!-- Interviews will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+
+        function showNotification(message, isError = false) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                style: {
+                    background: isError ? "#ef4444" : "#22c55e",
+                }
+            }).showToast();
+        }
+
+        async function loadDashboardStats() {
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/dashboard/stats/email/${userEmail}`);
+                const data = await response.json();
+
+                // Update stats
+                document.getElementById('totalInterviews').textContent = data.totalInterviews;
+                document.getElementById('averageScore').textContent = `${data.averageScore}%`;
+                document.getElementById('practiceTime').textContent = `${data.totalPracticeTime}h`;
+
+                // Update interviews table
+                const tableBody = document.getElementById('interviewsTable');
+                tableBody.innerHTML = data.recentInterviews.map(interview => `
+                    <tr class="border-b border-white/5">
+                        <td class="py-4">${new Date(interview.dateTime).toLocaleString()}</td>
+                        <td>${interview.type}</td>
+                        <td>${interview.score || '-'}%</td>
+                        <td>${interview.duration}min</td>
+                        <td>${interview.status}</td>
+                        <td>
+                            ${interview.status === 'Scheduled' ? 
+                                `<button onclick="cancelInterview(${interview.id})" class="text-red-500 hover:text-red-400">Cancel</button>` :
+                                `<button onclick="viewReport(${interview.id})" class="text-[#00b8ff] hover:text-[#00ff8c]">View Report</button>`
+                            }
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Set next interview
+                if (data.upcomingInterviews && data.upcomingInterviews.length > 0) {
+                    const next = data.upcomingInterviews[0];
+                    document.getElementById('nextInterview').textContent = 
+                        new Date(next.dateTime).toLocaleDateString();
+                }
+
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                showNotification('Error loading dashboard data', true);
+            }
+        }
+
+        // Schedule new interview
+        document.getElementById('scheduleForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const userEmail = localStorage.getItem('userEmail');
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/dashboard/schedule/email/${userEmail}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: formData.get('type'),
+                        dateTime: formData.get('dateTime'),
+                        duration: 45 // Default duration
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showNotification('Interview scheduled successfully');
+                    loadDashboardStats(); // Reload stats
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showNotification(error.message || 'Error scheduling interview', true);
+            }
+        });
+
+        async function cancelInterview(id) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/dashboard/cancel/${id}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    showNotification('Interview cancelled successfully');
+                    loadDashboardStats(); // Reload stats
+                } else {
+                    throw new Error('Failed to cancel interview');
+                }
+            } catch (error) {
+                showNotification(error.message, true);
+            }
+        }
+
+        // Load stats when page loads
+        document.addEventListener('DOMContentLoaded', loadDashboardStats);
+    </script>
+</body>
+</html>

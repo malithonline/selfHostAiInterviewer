@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Platform - Login</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Toastify for notifications -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#1c1c1c',
+                        'dark-card': '#131313',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .gradient-text {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(90deg, #00ff8c, #00b8ff);
+        }
+
+        .card-gradient {
+            background: linear-gradient(145deg, #131313, #1f1f1f);
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .loading {
+            position: relative;
+        }
+
+        .loading:after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: auto;
+            border: 4px solid transparent;
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: loading-spinner 1s ease infinite;
+        }
+
+        @keyframes loading-spinner {
+            from {
+                transform: rotate(0turn);
+            }
+            to {
+                transform: rotate(1turn);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-dark flex justify-center items-center p-8 text-white" x-data="{ isLogin: true }">
+    <div class="flex gap-8 max-w-6xl w-full h-[600px]">
+        <!-- Left Card -->
+        <div class="flex-1 card-gradient rounded-3xl p-10 border border-white/10 flex flex-col">
+            <div class="relative h-[45%] min-h-[200px] mb-8 rounded-2xl overflow-hidden border border-white/10">
+                <div class="slide active">
+                    <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=800" alt="AI Technology" class="w-full h-full object-cover">
+                </div>
+                <div class="slide">
+                    <img src="https://images.unsplash.com/photo-1552581234-26160f608093?w=800" alt="Success" class="w-full h-full object-cover">
+                </div>
+            </div>
+
+            <div class="flex-1 flex flex-col">
+                <h2 class="text-4xl font-bold mb-6 gradient-text">Master Your Interview Skills</h2>
+                <div class="grid grid-cols-2 gap-6 mt-6">
+                    <div class="bg-white/[0.03] p-7 rounded-2xl border border-white/10 transition-all hover:-translate-y-1 hover:bg-white/[0.05] hover:border-white/20">
+                        <i class='bx bx-brain text-3xl gradient-text mb-4'></i>
+                        <h4 class="text-lg font-semibold mb-2">AI-Powered Practice</h4>
+                        <p class="text-white/70 leading-relaxed">Realistic interview scenarios</p>
+                    </div>
+                    <div class="bg-white/[0.03] p-7 rounded-2xl border border-white/10 transition-all hover:-translate-y-1 hover:bg-white/[0.05] hover:border-white/20">
+                        <i class='bx bx-line-chart text-3xl gradient-text mb-4'></i>
+                        <h4 class="text-lg font-semibold mb-2">Real-time Analytics</h4>
+                        <p class="text-white/70 leading-relaxed">Get instant feedback</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Card -->
+        <div class="flex-1 card-gradient rounded-3xl p-10 border border-white/10">
+            <!-- Login Form -->
+            <div x-show="isLogin" x-transition class="h-full flex flex-col justify-center">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold mb-3">Welcome Back</h2>
+                    <p class="text-white/70">Sign in to continue your practice</p>
+                </div>
+                <form id="loginForm" class="space-y-6">
+                    <div class="relative">
+                        <i class='bx bx-envelope absolute left-4 top-1/2 -translate-y-1/2 text-white/50'></i>
+                        <input type="email" name="email" placeholder="Email address" required
+                            class="w-full py-4 pl-12 pr-4 bg-white/[0.03] border border-white/10 rounded-xl text-white transition-all focus:outline-none focus:border-[#00b8ff] focus:bg-white/[0.05]">
+                    </div>
+                    <div class="relative">
+                        <i class='bx bx-lock-alt absolute left-4 top-1/2 -translate-y-1/2 text-white/50'></i>
+                        <input type="password" name="password" placeholder="Password" required
+                            class="w-full py-4 pl-12 pr-4 bg-white/[0.03] border border-white/10 rounded-xl text-white transition-all focus:outline-none focus:border-[#00b8ff] focus:bg-white/[0.05]">
+                    </div>
+                    <div class="flex flex-col items-center gap-4">
+                        <button type="submit" id="loginButton" 
+                                class="gradient-bg text-black font-semibold py-4 px-8 rounded-xl w-4/5 hover:opacity-90 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Sign In
+                        </button>
+                        <p class="text-white/70 text-sm">
+                            Don't have an account? 
+                            <a href="#" @click.prevent="isLogin = false" class="text-[#00b8ff] hover:text-[#00ff8c] transition-colors">Register</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Register Form -->
+            <div x-show="!isLogin" x-transition class="h-full flex flex-col justify-center">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold mb-3">Create Account</h2>
+                    <p class="text-white/70">Start your interview practice journey</p>
+                </div>
+                <form id="registerForm" class="space-y-6">
+                    <div class="relative">
+                        <i class='bx bx-user absolute left-4 top-1/2 -translate-y-1/2 text-white/50'></i>
+                        <input type="text" name="name" placeholder="Full Name" required
+                            class="w-full py-4 pl-12 pr-4 bg-white/[0.03] border border-white/10 rounded-xl text-white transition-all focus:outline-none focus:border-[#00b8ff] focus:bg-white/[0.05]">
+                    </div>
+                    <div class="relative">
+                        <i class='bx bx-envelope absolute left-4 top-1/2 -translate-y-1/2 text-white/50'></i>
+                        <input type="email" name="email" placeholder="Email address" required
+                            class="w-full py-4 pl-12 pr-4 bg-white/[0.03] border border-white/10 rounded-xl text-white transition-all focus:outline-none focus:border-[#00b8ff] focus:bg-white/[0.05]">
+                    </div>
+                    <div class="relative">
+                        <i class='bx bx-lock-alt absolute left-4 top-1/2 -translate-y-1/2 text-white/50'></i>
+                        <input type="password" name="password" placeholder="Password" required
+                            class="w-full py-4 pl-12 pr-4 bg-white/[0.03] border border-white/10 rounded-xl text-white transition-all focus:outline-none focus:border-[#00b8ff] focus:bg-white/[0.05]">
+                    </div>
+                    <div class="relative">
+                        <i class='bx bx-lock-alt absolute left-4 top-1/2 -translate-y-1/2 text-white/50'></i>
+                        <input type="password" name="confirmPassword" placeholder="Confirm Password" required
+                            class="w-full py-4 pl-12 pr-4 bg-white/[0.03] border border-white/10 rounded-xl text-white transition-all focus:outline-none focus:border-[#00b8ff] focus:bg-white/[0.05]">
+                    </div>
+                    <div class="flex flex-col items-center gap-4">
+                        <button type="submit" id="registerButton"
+                                class="gradient-bg text-black font-semibold py-4 px-8 rounded-xl w-4/5 hover:opacity-90 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Create Account
+                        </button>
+                        <p class="text-white/70 text-sm">
+                            Already have an account? 
+                            <a href="#" @click.prevent="isLogin = true" class="text-[#00b8ff] hover:text-[#00ff8c] transition-colors">Login</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080';
+
+        // Show notification
+        function showNotification(message, isError = false) {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                style: {
+                    background: isError ? "#ef4444" : "#22c55e",
+                }
+            }).showToast();
+        }
+
+        // Set loading state
+        function setLoading(button, isLoading) {
+            button.disabled = isLoading;
+            if (isLoading) {
+                button.classList.add('loading');
+                button.textContent = '';
+            } else {
+                button.classList.remove('loading');
+                button.textContent = button.id === 'loginButton' ? 'Sign In' : 'Create Account';
+            }
+        }
+
+    // Handle Login
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const button = document.getElementById('loginButton');
+        setLoading(button, true);
+
+        const formData = new FormData(this);
+        const email = formData.get('email');
+        const password = formData.get('password');
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('userEmail', email);
+            localStorage.setItem('userName', data.user.fullName);  // This is the fix
+            showNotification('Login successful!');
+            window.location.href = 'dashboard.html';
+        }else {
+                showNotification(data.message, true);
+            }
+        } catch (error) {
+            showNotification('Login failed. Please try again.', true);
+        } finally {
+            setLoading(button, false);
+        }
+    });
+
+        // Handle Registration
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const button = document.getElementById('registerButton');
+            setLoading(button, true);
+
+            const formData = new FormData(this);
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+
+            if (password !== confirmPassword) {
+                showNotification('Passwords do not match', true);
+                setLoading(button, false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fullName: formData.get('name'),
+                        email: formData.get('email'),
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showNotification('Registration successful! Please login.');
+                    // Simple redirect to login form
+                    window.location.reload();
+                } else {
+                    throw new Error(data.message || 'Registration failed');
+                }
+            } catch (error) {
+                showNotification(error.message, true);
+            } finally {
+                setLoading(button, false);
+            }
+        });
+
+        // Image slider
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+
+        function nextSlide() {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }
+
+        setInterval(nextSlide, 5000);
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = 'dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>
